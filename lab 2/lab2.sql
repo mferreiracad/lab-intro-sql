@@ -20,7 +20,12 @@ SELECT max(rental_id) FROM sakila.rental;
 -- Actually, there's a mistake somewhere in rental_id, since we are missing 5 entries when we do the count
 -- Maybe, some of the entries have been erased from the dataset, that's the only reason to have a higher
 -- number of rental_id's.
-
+-- Jose told me that he understands this question as 'How many films are being rented right now',
+-- if that's the case...I'm looking for NULLs
+SELECT * FROM sakila.rental WHERE return_date IS NULL; -- 183 films not returned
+-- to be sure...
+SELECT return_date FROM sakila.rental; -- from a total of 16044
+SELECT * FROM sakila.rental WHERE return_date is not null; -- where 15861 have already been returned
 
 -- What are the shortest and longest movie duration? Name the values max_duration and min_duration.
 -- SELECT title, min(length) as min_duration, max(length) as max_duration FROM film;
@@ -29,14 +34,14 @@ SELECT max(rental_id) FROM sakila.rental;
 -- So I'm doing a union of two different tables. I know that this can be done in a different manner.
 SELECT * FROM
 (SELECT 'min_duration' AS '', sakila.film.title, sakila.film.length
-FROM sakila.film
+FROM sakila.film -- first table to access
 ORDER BY sakila.film.length ASC -- ascending order to have the lowest value first
 LIMIT 1 -- limiting the results to one
 ) AS table_1 -- giving the table a name
 UNION -- merging min_table with max_table
 SELECT * FROM
 (SELECT 'max_duration' AS '', sakila.film.title, sakila.film.length
-FROM sakila.film
+FROM sakila.film -- second table to access
 ORDER BY sakila.film.length DESC -- descending order to have the highest value first
 LIMIT 1 -- limiting the number of results to one
 ) AS table_2; -- giving the table a name
