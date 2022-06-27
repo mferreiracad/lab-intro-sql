@@ -91,7 +91,7 @@ SELECT k_symbol, left(k_symbol,3), right(k_symbol,2) , concat(left(k_symbol,2),r
 
 SELECT * FROM bank.loan;
 
-SELECT loan_id, account_id,
+SELECT loan_id, account_id, status AS 'previous status'
 CASE
 WHEN status = 'B' then 'Defaulter - contract finished'
 WHEN status = 'A' then 'Good - contract finished'
@@ -143,21 +143,48 @@ select *, substr(date,1,2) as year from account;
 SELECT * FROM bank.account;
 
 SELECT * , CONVERT(date,DATE) FROM bank.account;
-SELECT * , CONVERT(date,datetime) FROM bank.account;
+SELECT * , CONVERT(date,DATETIME) FROM bank.account;
 
 SELECT * FROM bank.card;
 
-SELECT *,CONVERT(left(issued,6),date) AS 'issued_date' FROM bank.card;
+SELECT *,CONVERT(LEFT(issued,6),date) AS 'issued_date' FROM bank.card;
 
 SELECT *, date_format(CONVERT(left(issued,6),date), '%d-%m-%Y') AS 'issued_date' FROM bank.card;
 
 SELECT *, date_format(CONVERT(left(issued,6),date), '%M') AS 'issued_date' FROM bank.card;
 
+-- Activity 1
+-- Select districts and salaries (from the district table) where salary is greater than 10000.
+-- Return columns as district_name and average_salary
+SELECT A2, A11 FROM district WHERE A11 > 10000;
+-- Select those loans whose contract finished and were not paid.
+-- Hint: You should be looking at the loan column and you will need the extended case study information
+-- to tell you which value of status is required.
+SELECT * FROM card WHERE type = 'junior' ORDER BY card_id ASC LIMIT 10;
 
 
+SELECT loan_id, account_id, (amount-payments) AS debt FROM loan WHERE status = 'B';
+-- Calculate the urban population for all districts.
+-- Hint: You are looking for the number of inhabitants and the % of urban inhabitants in each district.
+-- Return columns as district_name and urban_population.
+SELECT A2 AS district_name,round(A4+A10/100) AS urban_population FROM district;
+-- On the previous query result - rerun it but filtering out districts where the rural population is greater than 50%.
+SELECT A2 AS district_name,A4 AS urban_population, A10 as ratio_of_urban_inhabitants FROM district WHERE A10 < 50;
 
+-- Activity 2
+-- Get all junior cards issued last year. Hint: Use the numeric value (980000).
+SELECT * FROM card WHERE type = 'junior' and issued > 980000;
+-- Get the first 10 transactions for withdrawals that are not in cash.
+-- You will need the extended case study information to tell you which values are required here,
+-- and you will need to refer to conditions on two columns.
+SELECT * FROM trans WHERE type = 'VYDAJ' and not (operation = 'VKLAD' and operation = 'VYBER') order by date asc limit 10;
+-- Refine your query from last activity on loans whose contract finished and not paid back - filtered to loans where
+-- they were left with a debt bigger than 1000. Return the debt value together with loan id and account id.
+-- Sort by the highest debt value to the lowest.
+SELECT loan_id, account_id, (amount - payments) AS debt FROM bank.loan
+WHERE status = 'B' and (amount - payments) > 1000
+ORDER BY debt desc;
+-- Get the biggest and the smallest transaction with non-zero values in the database (use the trans table in the bank database).
 
-
-
-
-
+-- Get account information with an extra column year showing the opening year as 'YY'. Eg., 1995 will show as 95. Hint: Look at
+-- the first two characters of the string date in the account table. You would have to use function substr. Google is your friend.
