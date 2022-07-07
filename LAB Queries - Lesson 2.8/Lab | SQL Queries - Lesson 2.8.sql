@@ -67,46 +67,42 @@ Where f.title = "Academy Dinosaur" and i.store_id = 1
 Group by i.store_id;
 
 -- Get all pairs of customers that have rented the same film more than 3 times.
-select c1.customer_id as id1,concat(c1.last_name,', ',c1.first_name),
-		c2.customer_id as id2,concat(c2.last_name,', ',c2.first_name), count(*) as num_films
-from sakila.customer c1
-join rental r1 
-	on r1.customer_id = c1.customer_id
-join inventory i1
-	on r1.inventory_id = i1.inventory_id
-join film f1 
-	on i1.film_id = f1.film_id
-join inventory i2 on 
-i2.film_id = f1.film_id
-join rental r2 
-	on r2.inventory_id = i2.inventory_id
-join customer c2 
-	on r2.customer_id = c2.customer_id
-where c1.customer_id < c2.customer_id
-group by c1.customer_id, c2.customer_id
-having count(*) > 3
-order by num_films desc;
+SELECT f.title,cust1, cust2
+FROM(
+	SELECT film_id,cust1,cust2,COUNT(*) OVER (PARTITION BY film_id) ct
+	FROM(
+		SELECT r1.inventory_id film_id,r1.customer_id cust1,r2.customer_id cust2
+		FROM rental r1
+		JOIN rental r2
+			ON r1.inventory_id = r2.inventory_id AND r1.customer_id <> r2.customer_id) d1
+		WHERE cust1 < cust2) d2
+		JOIN film f
+			ON d2.film_id = f.film_id
+ WHERE ct > 3;
 
 -- For each film, list actor that has acted in more films.
-
+SELECT film_id,a.first_name,a.last_name
+FROM(
+	SELECT film_id,actor_id,'number',MAX('number')
+    OVER (PARTITION BY film_id) max_for_film
+	FROM(
+		SELECT fc.film_id,fc.actor_id, COUNT(*) OVER (PARTITION BY fc.actor_id) 'number'
+		FROM film_actor fc
+		ORDER BY fc.film_id)sq1
+    )sq2
+JOIN actor a
+	ON sq2.actor_id = a.actor_id
+WHERE 'number' = max_for_film;
 
 -- Get all pairs of actors that worked together.
-
--- It's not working...I haven't figured out how to filter this in a way that a pair just appears once.
-SELECT fa1.actor_id AS Actor1_id, concat(a1.first_name, ' ', a1.last_name) as Name1,
-	concat(a2.first_name, ' ',a2.last_name) as Name2, fa2.actor_id AS Actor2_id, f.title
+SELECT fa1.actor_id AS Actor1, concat(a1.first_name,' ',a1.last_name),
+		fa2.actor_id AS Actor2, concat(a2.first_name,' ',a2.last_name)
 FROM sakila.film_actor AS fa1
 JOIN sakila.film_actor AS fa2
 	ON fa1.actor_id != fa2.actor_id
-Join sakila.actor As a1
-	on a1.actor_id = fa1.actor_id
-Join sakila.actor as a2
-	on a2.actor_id = fa2.actor_id
-Join sakila.film f
-	on fa1.film_id = f.film_id
-WHERE fa1.actor_id < fa2.actor_id AND fa1.film_id = fa2.film_id;	
-
--- Get all possible pairs of actors and films.
-select concat(a.last_name,', ', a.first_name) as Name, f.title as Title
-from sakila.actor a
-join sakila.film as f;
+JOIN sakila.actor as a1
+	ON a1.actor_id = fa1.actor_id
+JOIN sakila.actor as a2
+	ON a2.actor_id = fa2.actor_id
+WHERE fa1.actor_id < fa2.actor_id     
+	AND fa1.film_id = fa2.film_id;
